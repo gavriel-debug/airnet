@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>שוק עד הבית הרצליה | פירות וירקות טריים עד הבית</title>
+    <meta name="description" content="שוק עד הבית הרצליה - פירות וירקות טריים מ-25 חקלאים מקומיים. משלוח יומי להרצליה והסביבה. הזמנה מינימלית 200₪">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-green: #2E7D32;
+            --light-green: #4CAF50;
+            --accent-orange: #FF7043;
+            --cream-bg: #F8F9FA;
+            --dark-text: #212121;
+            --light-text: #424242;
+            --border-color: #E0E0E0;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-text);
+            background: linear-gradient(135deg, var(--cream-bg) 0%, #FFFFFF 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-green);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header .location {
+            font-size: 1.2rem;
+            color: var(--accent-orange);
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--light-text);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Benefits */
+        .benefits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .benefit {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .benefit:hover {
+            transform: translateY(-5px);
+        }
+
+        .benefit-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .benefit h3 {
+            color: var(--primary-green);
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        /* WhatsApp CTA */
+        .whatsapp-cta {
+            background: linear-gradient(135deg, #E8F5E8, #F1F8F1);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 40px;
+            border: 3px solid var(--light-green);
+        }
+
+        .whatsapp-cta h2 {
+            color: var(--primary-green);
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+
+        .whatsapp-cta p {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .whatsapp-button {
+            display: inline-block;
+            background: #25D366;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0 10px 10px 0;
+        }
+
+        .whatsapp-button:hover {
+            background: #128C7E;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+        }
+
+        .whatsapp-secondary {
+            background: white;
+            color: #25D366;
+            border: 2px solid #25D366;
+        }
+
+        .whatsapp-secondary:hover {
+            background: #25D366;
+            color: white;
+        }
+
+        /* Sample Menu */
+        .sample-menu {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .sample-menu h2 {
+            text-align: center;
+            color: var(--primary-green);
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+        }
+
+        .menu-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .menu-category h3 {
+            color: var(--primary-green);
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--light-green);
+            padding-bottom: 5px;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dotted #ddd;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-price {
+            color: var(--primary-green);
+            font-weight: 600;
+        }
+
+        /* Order Form */
+        .order-section {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+
+        .order-section h2 {
+            text-align: center;
+            color: var(--primary-green);
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-text);
+            font-size: 1rem;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            height: 120px;
+        }
+
+        .required {
+            color: #D32F2F;
+        }
+
+        .submit-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .submit-button {
+            background: var(--primary-green);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 250px;
+        }
+
+        .submit-button:hover {
+            background: var(--light-green);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 125, 50, 0.3);
+        }
+
+        .form-note {
+            margin-top: 20px;
+            color: var(--light-text);
+            font-size: 0.95rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Shipping Info */
+        .shipping-info {
+            background: linear-gradient(135deg, #E3F2FD, #F3E5F5);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .shipping-info h3 {
+            color: var(--primary-green);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .shipping-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+
+        .shipping-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--light-text);
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .footer h3 {
+            color: var(--primary-green);
+            margin-bottom: 15px;
+        }
+
+        .footer a {
+            color: var(--primary-green);
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .benefits {
+                grid-template-columns: 1fr;
+            }
+
+            .menu-categories {
+                grid-template-columns: 1fr;
+            }
+
+            .whatsapp-button {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+
+        /* Success Message */
+        .success-message {
+            background: #E8F5E8;
+            border: 2px solid var(--light-green);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-message h3 {
+            color: var(--primary-green);
+            margin-bottom: 10px;
+        }
+
+        /* Enhanced animations and interactions */
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading animations */
+        .loading-element {
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* Enhanced focus */
+        *:focus { outline: 2px solid var(--light-green); outline-offset: 2px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🍓 שוק עד הבית הרצליה</h1>
+            <div class="location">📍 הרצליה והסביבה</div>
+            <p>פירות וירקות פרימיום מ-25 חקלאים מקומיים + מגדלים בעצמנו<br>
+            משלוח יומי עד הבית - רק הטוב ביותר למשפחות הרצליה</p>
+        </header>
+
+        <!-- Benefits -->
+        <section class="benefits">
+            <div class="benefit loading-element">
+                <div class="benefit-icon">🚚</div>
+                <h3>משלוח יומי להרצליה</h3>
+                <p>כל יום במהלך השבוע, גם למקום העבודה בת"א</p>
+            </div>
+            <div class="benefit loading-element">
+                <div class="benefit-icon">🌱</div>
+                <h3>ישירות מהחקלאים + גידול עצמי</h3>
+                <p>25 חקלאים מקומיים ללא מתווכים + חלק מהמוצרים שלנו מגודלים בבית</p>
+            </div>
+            <div class="benefit loading-element">
+                <div class="benefit-icon">✋</div>
+                <h3>נבחר ביד</h3>
+                <p>רק מה שהיינו לוקחים למשפחות שלנו</p>
+            </div>
+            <div class="benefit loading-element">
+                <div class="benefit-icon">💡</div>
+                <h3>חדשנות מתמדת</h3>
+                <p>מתכננים להכניס מוצרים חדשים לשוק - בהשראתכם!</p>
+            </div>
+        </section>
+
+        <!-- WhatsApp CTA -->
+        <section class="whatsapp-cta">
+            <h2>💬 הצטרפו לקבוצת הרצליה בוואטסאפ</h2>
+            <p>קבלו תפריט מעודכן בימי שני ורביעי, מוצרים אקסקלוסיביים ועדכונים על מוצרים חדשים</p>
+            <a href="https://chat.whatsapp.com/EkvtzcgUBYqIrGDwuLD7ux" class="whatsapp-button">
+                הצטרפות לקבוצה
+            </a>
+            <a href="#order-form" class="whatsapp-button whatsapp-secondary">
+                או הזמינו ישירות כאן ⬇️
+            </a>
+        </section>
+
+        <!-- Our Story Section -->
+        <section style="background: linear-gradient(135deg, rgba(232, 245, 233, 0.6) 0%, rgba(241, 248, 233, 0.6) 100%); 
+                        padding: 40px 30px; border-radius: 20px; margin-bottom: 40px; 
+                        box-shadow: 0 8px 25px rgba(0,0,0,0.08);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center;">
+                <div>
+                    <h2 style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+                              background-clip: text; margin-bottom: 20px; font-size: 1.8rem; font-weight: 700;">
+                        👥 הסיפור שלנו
+                    </h2>
+                    <p style="color: var(--dark-text); line-height: 1.7; margin-bottom: 15px;">
+                        שמנו <strong>אייל ושי</strong>, שני חברים מהרצליה שמאסנו מירקות עייפים בסופרים. 
+                        התחלנו לעבוד ישירות עם <strong>25 חקלאים מקומיים</strong> ברחבי הארץ.
+                    </p>
+                    <p style="color: var(--light-text); line-height: 1.7; margin-bottom: 20px;">
+                        חלק מהמוצרים אנחנו מגדלים בעצמנו, וחלק מגיע ישירות מהחקלאים - 
+                        ללא מתווכים, ללא אחסון ארוך. רק הטוב ביותר למשפחות הרצליה.
+                    </p>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <span style="background: var(--gradient-primary); color: white; padding: 8px 15px; 
+                                    border-radius: 20px; font-size: 0.85rem; font-weight: 600;">25 חקלאים</span>
+                        <span style="background: var(--gradient-secondary); color: white; padding: 8px 15px; 
+                                    border-radius: 20px; font-size: 0.85rem; font-weight: 600;">גידול עצמי</span>
+                        <span style="background: var(--gradient-primary); color: white; padding: 8px 15px; 
+                                    border-radius: 20px; font-size: 0.85rem; font-weight: 600;">ללא מתווכים</span>
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="width: 120px; height: 120px; background: var(--gradient-primary); 
+                               border-radius: 50%; margin: 0 auto 20px; display: flex; 
+                               align-items: center; justify-content: center; 
+                               box-shadow: 0 10px 30px rgba(46, 125, 50, 0.3);
+                               animation: bounce 2s ease-in-out infinite;">
+                        <span style="font-size: 4rem;">🌾</span>
+                    </div>
+                    <p style="color: var(--primary-green); font-weight: 600; font-size: 1.1rem;">
+                        ישירות מהשדה עד הבית
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Shipping Info -->
+        <section class="shipping-info">
+            <h3>🚚 אזורי משלוח ולוחות זמנים</h3>
+            <div class="shipping-grid">
+                <div class="shipping-item">
+                    <strong>הרצליה</strong><br>
+                    כל יום, 16:00-20:00
+                </div>
+                <div class="shipping-item">
+                    <strong>הרצליה פיתוח</strong><br>
+                    כל יום, 16:00-20:00
+                </div>
+                <div class="shipping-item">
+                    <strong>רמת השרון</strong><br>
+                    כל יום, 16:00-20:00
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Testimonials -->
+        <section style="background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); 
+                        padding: 30px; border-radius: 20px; margin-bottom: 40px; 
+                        box-shadow: 0 8px 25px rgba(0,0,0,0.08); text-align: center;">
+            <h2 style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+                      background-clip: text; margin-bottom: 25px; font-size: 1.6rem; font-weight: 700;">
+                💬 מה הלקוחים שלנו אומרים
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div style="background: rgba(255,255,255,0.8); padding: 20px; border-radius: 15px; 
+                           border-right: 4px solid var(--light-green); box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+                    <div style="color: var(--light-green); font-size: 1.5rem; margin-bottom: 10px;">⭐⭐⭐⭐⭐</div>
+                    <p style="color: var(--dark-text); font-style: italic; margin-bottom: 10px; line-height: 1.6;">
+                        "הירקות הכי טריים שקיבלתי! האיכות פשוט מדהימה וההזמנה סופר נוחה"
+                    </p>
+                    <div style="color: var(--primary-green); font-weight: 600; font-size: 0.9rem;">
+                        רינה מ. - הרצליה פיתוח
+                    </div>
+                </div>
+                <div style="background: rgba(255,255,255,0.8); padding: 20px; border-radius: 15px; 
+                           border-right: 4px solid var(--accent-orange); box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+                    <div style="color: var(--accent-orange); font-size: 1.5rem; margin-bottom: 10px;">⭐⭐⭐⭐⭐</div>
+                    <p style="color: var(--dark-text); font-style: italic; margin-bottom: 10px; line-height: 1.6;">
+                        "סוף סוף פירות באיכות שווקים! והשירות זה כבוד אמיתי"
+                    </p>
+                    <div style="color: var(--primary-green); font-weight: 600; font-size: 0.9rem;">
+                        דני ל. - הרצליה מרכז
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Order Form -->
+        <section id="order-form" class="order-section">
+            <h2>📋 הזמנה ישירה</h2>
+            
+            <div class="success-message" id="successMessage">
+                <h3>✅ ההזמנה נשלחה בהצלחה!</h3>
+                <p>ניצור איתכם קשר תוך מספר שעות לאישור ההזמנה</p>
+            </div>
+
+            <form id="orderForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fullName">שם מלא <span class="required">*</span></label>
+                        <input type="text" id="fullName" name="fullName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">טלפון <span class="required">*</span></label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="area">אזור בהרצליה <span class="required">*</span></label>
+                        <select id="area" name="area" required>
+                            <option value="">בחרו אזור...</option>
+                            <option value="הרצליה מרכז">הרצליה מרכז</option>
+                            <option value="הרצליה פיתוח">הרצליה פיתוח</option>
+                            <option value="נוה ישראל">נוה ישראל</option>
+                            <option value="רמת השרון">רמת השרון</option>
+                            <option value="אחר">אחר (נכתב בהערות)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="deliveryTime">זמן משלוח מועדף</label>
+                        <select id="deliveryTime" name="deliveryTime">
+                            <option value="">בכל זמן</option>
+                            <option value="16:00-17:00">16:00-17:00</option>
+                            <option value="17:00-18:00">17:00-18:00</option>
+                            <option value="18:00-19:00">18:00-19:00</option>
+                            <option value="19:00-20:00">19:00-20:00</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">אימייל (אופציונלי)</label>
+                    <input type="email" id="email" name="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="orderDetails">רשימת המוצרים הרצויים <span class="required">*</span></label>
+                    <textarea id="orderDetails" name="orderDetails" placeholder="לדוגמה: תות שדה 0.5 קג, עגבניות שרי 1.2 קג, בננות 1.2 קג, חסה 2 יחידות..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">הערות נוספות</label>
+                    <textarea id="notes" name="notes" placeholder="כתובת מדויקת, הוראות הגעה, בקשות מיוחדות..." style="height: 80px;"></textarea>
+                </div>
+                
+                <div class="submit-section">
+                    <button type="submit" class="submit-button" style="position: relative; overflow: hidden;">
+                        <span style="position: relative; z-index: 2;">שליחת הזמנה לוואטסאפ</span>
+                        <div style="position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                                   transform: translateX(-100%); transition: transform 0.6s ease; z-index: 1;"></div>
+                    </button>
+                    <div class="form-note">
+                        ההזמנה תישלח ישירות אלינו בוואטסאפ.<br>
+                        ניצור איתכם קשר תוך כמה שעות לאישור ותאום משלוח.
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <h3>שוק עד הבית הרצליה</h3>
+            <p>אייל ושי | פירות וירקות טריים מהחקלאים</p>
+            <div style="margin-top: 15px;">
+                <a href="tel:0507412191">📞 050-741-2191</a>
+                <a href="https://wa.me/972507412191">💬 WhatsApp</a>
+            </div>
+            <div style="margin-top: 20px; opacity: 0.7; font-size: 0.9rem;">
+                © 2024 שוק עד הבית הרצליה. משלוח יומי להרצליה והסביבה.
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Form submission
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Validation
+            if (!data.fullName || !data.phone || !data.area || !data.orderDetails) {
+                alert('אנא מלאו את כל השדות המסומנים בכוכבית');
+                return;
+            }
+
+            // Create WhatsApp message
+            const whatsappMessage = `
+🍓 הזמנה חדשה מהאתר - שוק עד הבית הרצליה
+
+👤 פרטי הלקוח:
+שם: ${data.fullName}
+טלפון: ${data.phone}
+אזור: ${data.area}
+זמן משלוח מועדף: ${data.deliveryTime || 'בכל זמן'}
+${data.email ? `אימייל: ${data.email}` : ''}
+
+🛒 הזמנה:
+${data.orderDetails}
+
+${data.notes ? `💬 הערות: ${data.notes}` : ''}
+
+📅 תאריך: ${new Date().toLocaleDateString('he-IL')}
+            `.trim();
+            
+            // Send to webhook
+            const webhookUrl = 'https://hook.eu1.make.com/4z9e6dj3sdxmt57ziseo17eqjzf65tz2';
+
+            const submitBtn = document.querySelector('.submit-button');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'שולח...';
+
+            try {
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fullName: data.fullName,
+                        phone: data.phone,
+                        area: data.area,
+                        deliveryTime: data.deliveryTime || 'בכל זמן',
+                        email: data.email || '',
+                        orderDetails: data.orderDetails,
+                        notes: data.notes || '',
+                        submittedAt: new Date().toISOString()
+                    })
+                });
+            } catch (err) {
+                console.error('Webhook error:', err);
+            }
+
+            // Show success message
+            document.getElementById('successMessage').classList.add('show');
+            document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Reset form
+            this.reset();
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'שליחת הזמנה לוואטסאפ';
+
+            // Also open WhatsApp
+            setTimeout(() => {
+                const whatsappUrl = `https://wa.me/972507412191?text=${encodeURIComponent(whatsappMessage)}`;
+                window.open(whatsappUrl, '_blank');
+            }, 1500);
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Phone number formatting
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.startsWith('972')) {
+                value = '0' + value.substring(3);
+            }
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            e.target.value = value;
+        });
+
+        // Loading animations
+        window.addEventListener('load', function() {
+            const loadingElements = document.querySelectorAll('.loading-element');
+            loadingElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.animationDelay = (index * 0.1) + 's';
+                    element.classList.add('loaded');
+                }, index * 100);
+            });
+        });
+
+        // Enhanced scroll effects
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const header = document.querySelector('.header');
+            if (scrolled > 100) {
+                header.style.transform = 'translateY(-' + (scrolled * 0.1) + 'px)';
+            }
+        });
+    </script>
+</body>
+</html>
