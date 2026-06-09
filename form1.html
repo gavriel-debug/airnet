@@ -437,13 +437,28 @@
 
                 // 3. הפקת PDF מקומי (מחזיר Base64)
                 const elementToPrint = document.getElementById('report-container');
+                
+                // קריטי: גלילה לראש העמוד למניעת חיתוכים
+                window.scrollTo(0, 0);
+
                 const opt = {
-                    margin:       5,
+                    margin:       [10, 10, 10, 10], // שוליים
                     filename:     'report.pdf',
-                    image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 }, // windowWidth שומר על המבנה של Tailwind
-                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    image:        { type: 'jpeg', quality: 1 },
+                    html2canvas:  { 
+                        scale: 2, 
+                        useCORS: true, 
+                        windowWidth: 1024,
+                        scrollY: 0,
+                        x: 0,
+                        y: 0
+                    },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: 'avoid-all' }
                 };
+
+                // השהייה קטנה לתת לדפדפן לרנדר הכל נקי לפני שמצלמים
+                await new Promise(resolve => setTimeout(resolve, 500));
 
                 const pdfBase64DataUrl = await html2pdf().set(opt).from(elementToPrint).outputPdf('datauristring');
                 
@@ -466,9 +481,6 @@
 
                 if (response.ok) {
                     alert('הדו"ח והמסמך נשלחו בהצלחה!');
-                    // אופציונלי: איפוס טופס
-                    // document.getElementById('main-form').reset();
-                    // clearSignature();
                 } else {
                     alert('שגיאה בשליחת הדו"ח. אנא נסה שוב.');
                 }
