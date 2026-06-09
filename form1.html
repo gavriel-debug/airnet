@@ -421,12 +421,12 @@
                 const originalContainer = document.getElementById('report-container');
                 const clonedContainer = originalContainer.cloneNode(true);
 
-                // אילוץ גודל דסקטופ (1024) כדי לשמור על עיצוב השדות העליונים
+                // יצירת אלמנט עוטף מבודד זמני מחוץ למסך (מונע בעיות RTL לחלוטין)
                 const workerDiv = document.createElement('div');
                 workerDiv.style.position = 'absolute';
                 workerDiv.style.left = '-9999px';
                 workerDiv.style.top = '-9999px';
-                workerDiv.style.width = '1024px'; 
+                workerDiv.style.width = '800px'; // רוחב קבוע אופטימלי ל-A4
                 workerDiv.setAttribute('dir', 'rtl');
                 workerDiv.appendChild(clonedContainer);
                 document.body.appendChild(workerDiv);
@@ -434,27 +434,27 @@
                 // 3. ניקוי אלמנטים מיותרים מהעותק המשוכפל
                 clonedContainer.querySelectorAll('#submit-btn, #add-action-btn, #clear-sig-btn, .delete-action-btn').forEach(el => el.remove());
 
-                // 4. הפיכת שדות קלט לטקסט תוך שמירה על העיצוב המקורי שלהם
+                // 4. הפיכת שדות קלט (Inputs/Selects) לטקסט סטטי בעותק כדי שלא ישברו עיצוב
                 clonedContainer.querySelectorAll('input, select, textarea').forEach(input => {
+                    const id = input.getAttribute('id');
                     let val = input.value;
+                    
+                    // אם זה סלקט, ניקח את הטקסט המוצג
                     if (input.tagName === 'SELECT') {
                         const selectedOption = input.options[input.selectedIndex];
                         val = selectedOption ? selectedOption.text : input.value;
                     }
 
-                    const div = document.createElement('div');
-                    // העתקת העיצוב המקורי כדי ששדות ה-Header יישארו כהים
-                    div.className = input.className.replace(/focus:[^\s]+/g, ''); 
-                    div.style.whiteSpace = 'pre-wrap';
-                    div.style.display = 'flex';
-                    div.style.alignItems = input.tagName === 'TEXTAREA' ? 'flex-start' : 'center';
-                    div.style.minHeight = '42px';
-                    div.innerText = val || '---';
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'block w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 font-medium min-h-[42px]';
+                    textSpan.style.whiteSpace = 'pre-wrap';
+                    textSpan.innerText = val || '---';
                     
-                    input.parentNode.replaceChild(div, input);
+                    // החלפה בפועל בדום המשוכפל
+                    input.parentNode.replaceChild(textSpan, input);
                 });
 
-                // 5. טיפול בחתימה בעותק המשוכפל
+                // 5. טיפול בחתימה בעותק המשוכפל (החלפת ה-Canvas בתמונה קשיחה)
                 const clonedCanvas = clonedContainer.querySelector('#signature-pad');
                 if (clonedCanvas && formData.signature_base64) {
                     const img = document.createElement('img');
@@ -468,20 +468,17 @@
                     clonedCanvas.parentNode.replaceChild(noSigSpan, clonedCanvas);
                 }
 
-                // הבטחה שכל הפונטים סיימו להיטען לפני צילום המסמך (למניעת טשטוש)
-                await document.fonts.ready;
-
-                // 6. הגדרות html2pdf - ללא letterRendering ותמיכה בדסקטופ
+                // 6. הגדרות html2pdf המדויקות
                 const opt = {
-                    margin:       [10, 10, 10, 10],
+                    margin:       [10, 10, 10, 10], // שוליים אחידים מכל הצדדים
                     filename:     `דו_ח_טיפול_${formData.report_number || 'חדש'}.pdf`,
-                    image:        { type: 'jpeg', quality: 1 },
+                    image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { 
                         scale: 2, 
                         useCORS: true,
+                        letterRendering: true,
                         scrollY: 0,
-                        scrollX: 0,
-                        windowWidth: 1024 
+                        scrollX: 0
                     },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak:    { mode: ['avoid-all', 'css'] }
@@ -490,13 +487,13 @@
                 // הפקת ה-PDF מהעותק המבודד
                 const pdfBase64DataUrl = await html2pdf().set(opt).from(clonedContainer).outputPdf('datauristring');
                 
-                // הסרת האלמנט הזמני מהדום
+                // הסרת האלמנט הזמני מהדום לחלוטין
                 workerDiv.remove();
 
-                // חילוץ ה-Base64
+                // חילוץ ה-Base64 הנקי עבור ה-Webhook
                 formData.pdf_base64 = pdfBase64DataUrl.split(',')[1];
 
-                // 7. שליחה לוובהוק
+                // 7. שליחה ל-Webhook של Make
                 const TARGET_WEBHOOK = 'https://hook.eu1.make.com/1ukn154fochpe0xprtqj2be2stujtjed';
                 const response = await fetch(TARGET_WEBHOOK, {
                     method: 'POST',
