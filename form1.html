@@ -24,8 +24,27 @@
     </script>
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        .fade-in-up {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hide-in-pdf-export {
+            display: none !important;
+        }
+        /* מבטיח שהרקע יישאר נקי בצילום */
+        .pdf-export-mode {
+            background-color: #f8fafc !important; 
+        }
+    </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased py-10 px-4 md:px-0 selection:bg-blue-200">
+<body class="bg-slate-100 text-slate-800 antialiased py-10 px-4 md:px-0 selection:bg-blue-200" id="main-body">
 
     <div class="max-w-4xl mx-auto" id="report-container">
         
@@ -168,13 +187,13 @@
                         <div class="flex flex-col md:flex-row gap-3 items-start md:items-center dynamic-row">
                             <input type="text" placeholder="שם הפעולה" class="action-name w-full md:w-1/3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all font-medium">
                             <input type="text" placeholder="תיאור מורחב" class="action-desc w-full md:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all">
-                            <button type="button" onclick="this.parentElement.remove()" class="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
+                            <button type="button" onclick="this.parentElement.remove()" class="delete-action-btn p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
                                 <i data-lucide="trash-2" class="w-5 h-5"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="button" onclick="addDynamicAction()" class="flex items-center gap-2 text-sm font-bold text-blue-600 bg-white border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 px-5 py-2.5 rounded-lg transition-all w-full md:w-auto justify-center">
+                    <button type="button" id="add-action-btn" onclick="addDynamicAction()" class="flex items-center gap-2 text-sm font-bold text-blue-600 bg-white border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 px-5 py-2.5 rounded-lg transition-all w-full md:w-auto justify-center">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         הוסף פעולה נוספת
                     </button>
@@ -215,7 +234,7 @@
                         <canvas id="signature-pad" class="flex-1 w-full bg-white border-2 border-dashed border-slate-300 rounded-lg cursor-crosshair touch-none min-h-[120px] hover:border-blue-400 transition-colors"></canvas>
                         <div class="flex justify-between items-center mt-2">
                             <span class="text-xs text-slate-400 font-medium">חתום באמצעות העכבר או האצבע</span>
-                            <button type="button" onclick="clearSignature()" class="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-red-500 transition-colors">
+                            <button type="button" id="clear-sig-btn" onclick="clearSignature()" class="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-red-500 transition-colors">
                                 <i data-lucide="eraser" class="w-4 h-4"></i>
                                 נקה חתימה
                             </button>
@@ -237,7 +256,7 @@
     <script>
         lucide.createIcons();
 
-        // === שליפת נתונים ראשונית מהוובהוק בעת פתיחת הטופס ===
+        // === שליפת נתונים ראשונית מהוובהוק ===
         (function sendOpenWebhook() {
             const OPEN_WEBHOOK_URL = 'https://hook.eu1.make.com/urdv6soafdq8im88v5pa87j0jp0gjhvx';
 
@@ -262,7 +281,6 @@
             .then(text => {
                 try {
                     const data = JSON.parse(text);
-                    if (!data || typeof data !== 'object') return;
                     setVal('report_number', data.report_number);
                     setVal('treatment_type', data.treatment_type);
                     setVal('client_name',   data.client_name);
@@ -275,10 +293,10 @@
                     setVal('serial_number', data.serial_number);
                     setVal('call_nature',   data.call_nature);
                 } catch (e) {
-                    console.warn('התשובה אינה JSON תקין:', text);
+                    console.warn('התשובה מהוובהוק אינה JSON תקין:', text);
                 }
             })
-            .catch(err => console.error('שגיאה:', err));
+            .catch(err => console.error('שגיאה בשליחת/קבלת הוובהוק:', err));
         })();
 
         // === לוח חתימה (canvas) ===
@@ -307,7 +325,8 @@
                 }
             }
             resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
+            // ביטלתי פה את ההאזנה ל-resize במכוון כדי שזום או שינוי עיצוב לא ימחק את החתימה
+            // window.addEventListener('resize', resizeCanvas); 
 
             function getPos(e) {
                 const rect = canvas.getBoundingClientRect();
@@ -340,14 +359,16 @@
             };
         })();
 
+        // הוספת שורות דינמיות
         function addDynamicAction() {
             const container = document.getElementById('dynamic-actions');
             const row = document.createElement('div');
             row.className = 'flex flex-col md:flex-row gap-3 items-start md:items-center fade-in-up dynamic-row';
+            
             row.innerHTML = `
                 <input type="text" placeholder="שם הפעולה" class="action-name w-full md:w-1/3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all font-medium">
                 <input type="text" placeholder="תיאור מורחב" class="action-desc w-full md:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all">
-                <button type="button" onclick="this.parentElement.remove()" class="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
+                <button type="button" onclick="this.parentElement.remove()" class="delete-action-btn p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                 </button>
             `;
@@ -355,114 +376,36 @@
             lucide.createIcons();
         }
 
-        // ==========================================
-        // מחולל תבנית ה-HTML ל-PDF שיישלח ל-Make
-        // ==========================================
-        function generatePDFHtml(data, actions) {
-            let actionsRows = '';
-            if (actions && actions.length > 0) {
-                actions.forEach(act => {
-                    actionsRows += `<tr><td style="padding:10px; border:1px solid #cbd5e1; font-weight:bold; background-color:#f8fafc;">${act.name}</td><td style="padding:10px; border:1px solid #cbd5e1;">${act.description}</td></tr>`;
-                });
-            } else {
-                actionsRows = `<tr><td colspan="2" style="padding:10px; border:1px solid #cbd5e1; text-align:center; color:#94a3b8;">לא הוזנו פעולות</td></tr>`;
-            }
-
-            const signatureHtml = data.signature_base64 
-                ? `<img src="${data.signature_base64}" style="max-height: 80px;" alt="חתימת לקוח">`
-                : `<span style="color:#94a3b8;">ללא חתימה</span>`;
-
-            return `
-            <!DOCTYPE html>
-            <html lang="he" dir="rtl">
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #1e293b; line-height: 1.5; font-size: 14px; padding: 20px; margin: 0; }
-                    .header { background-color: #0f172a; color: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; position: relative; }
-                    .header h1 { margin: 0 0 5px 0; font-size: 24px; color: #ffffff; }
-                    .header p { margin: 0; color: #94a3b8; font-size: 14px; }
-                    .report-meta { position: absolute; left: 25px; top: 25px; text-align: left; }
-                    h2 { font-size: 18px; color: #2563eb; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                    th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: right; }
-                    th { background-color: #f8fafc; width: 20%; font-weight: bold; color: #475569; }
-                    td { width: 30%; }
-                    .full-width { width: 100%; }
-                    .signature-box { border: 1px dashed #cbd5e1; border-radius: 8px; padding: 15px; width: 250px; text-align: center; margin-top: 10px; min-height: 80px; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>קבוצת א.א.רם איירנט</h1>
-                    <p>טכנולוגיות אוויר דחוס בע"מ - טופס דיווח מקוון</p>
-                    <div class="report-meta">
-                        <strong style="color:#cbd5e1;">דו"ח מס':</strong> ${data.report_number || '---'}<br>
-                        <strong style="color:#cbd5e1;">סוג טיפול:</strong> ${data.treatment_type || '---'}
-                    </div>
-                </div>
-
-                <h2>פרטי הלקוח</h2>
-                <table>
-                    <tr><th>שם הלקוח:</th><td>${data.client_name || ''}</td><th>מס' מזהה:</th><td>${data.client_id || ''}</td></tr>
-                    <tr><th>כתובת:</th><td>${data.address || ''}</td><th>טלפון:</th><td>${data.phone || ''}</td></tr>
-                    <tr><th>מאשר הדו"ח:</th><td colspan="3">${data.approver || ''}</td></tr>
-                </table>
-
-                <h2>פרטי מסנן קו</h2>
-                <table>
-                    <tr><th>יצרן:</th><td>${data.manufacturer || ''}</td><th>דגם:</th><td>${data.model || ''}</td></tr>
-                    <tr><th>מספר סידורי:</th><td colspan="3">${data.serial_number || ''}</td></tr>
-                </table>
-
-                <h2>נתוני מכונה וחדר</h2>
-                <table>
-                    <tr><th>לחץ עבודה:</th><td>${data.work_pressure || ''}</td><th>דליפות אויר:</th><td>${data.air_leaks || ''}</td></tr>
-                    <tr><th>טמפ' עבודה:</th><td>${data.work_temp || ''}</td><th>נקיון חדר:</th><td>${data.room_cleanliness || ''}</td></tr>
-                    <tr><th>טמפ' בחדר:</th><td>${data.room_temp || ''}</td><th>בדיקת מייבש:</th><td>${data.dryer_check || ''}</td></tr>
-                </table>
-
-                <h2>פרטי הקריאה והטיפול</h2>
-                <table class="full-width">
-                    <tr><th style="width:20%;">מהות הקריאה:</th><td style="width:80%;">${data.call_nature || ''}</td></tr>
-                </table>
-                
-                <table class="full-width">
-                    ${actionsRows}
-                </table>
-
-                <table class="full-width">
-                    <tr><th style="width:20%;">הערות והמלצות:</th><td style="width:80%;">${data.notes || ''}</td></tr>
-                </table>
-
-                <h2>פרטי המבצע</h2>
-                <table>
-                    <tr><th>השירות ניתן ע"י:</th><td>${data.technician || ''}</td><th>תאריך ושעה:</th><td style="direction:ltr; text-align:right;">${data.form_date || ''} | ${data.form_time || ''}</td></tr>
-                </table>
-
-                <h2>חתימת הלקוח</h2>
-                <div class="signature-box">
-                    ${signatureHtml}
-                </div>
-            </body>
-            </html>
-            `;
+        // === פונקציית עזר: צריבת הערכים לתוך ה-HTML (QA Fix) ===
+        function bakeValuesIntoHtml(element) {
+            const inputs = element.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
+                    input.setAttribute('value', input.value);
+                    if (input.tagName === 'TEXTAREA') input.innerHTML = input.value;
+                } else if (input.tagName === 'SELECT') {
+                    Array.from(input.options).forEach(opt => {
+                        if (opt.value === input.value) opt.setAttribute('selected', 'selected');
+                        else opt.removeAttribute('selected');
+                    });
+                }
+            });
         }
 
-        // === שליחת הטופס לוובהוק ===
+        // === שליחת הטופס והפקת PDF ===
         document.getElementById('main-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const submitBtn = document.getElementById('submit-btn');
             const originalText = submitBtn.innerHTML;
             
-            submitBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> מכין מסמך ושולח...';
+            submitBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> מעבד ומייצר מסמך...';
             submitBtn.disabled = true;
             lucide.createIcons();
 
             try {
-                // איסוף הנתונים
-                const dataObj = {
+                // 1. איסוף כל השדות לפיילוד JSON
+                const formData = {
                     report_number: document.getElementById('report_number').value,
                     treatment_type: document.getElementById('treatment_type').value,
                     client_name: document.getElementById('client_name').value,
@@ -487,30 +430,80 @@
                     signature_base64: window.getSignatureDataUrl()
                 };
 
-                const actionsObj = [];
+                const actions = [];
                 document.querySelectorAll('.dynamic-row').forEach(row => {
                     const name = row.querySelector('.action-name').value;
                     const desc = row.querySelector('.action-desc').value;
                     if (name || desc) {
-                        actionsObj.push({ name, description: desc });
+                        actions.push({ name, description: desc });
                     }
                 });
+                formData.actions = actions;
 
-                // יצירת קוד ה-HTML המלא עבור ה-PDF
-                const finalHtmlForPdf = generatePDFHtml(dataObj, actionsObj);
+                // 2. הכנה לצילום
+                const elementToPrint = document.getElementById('report-container');
+                
+                // צריבת ערכים (מונע באגים של שדות ריקים ב-PDF)
+                bakeValuesIntoHtml(elementToPrint);
 
-                // המבנה שיישלח ל-Make
-                const payload = {
-                    ...dataObj,
-                    actions: actionsObj,
-                    html_for_pdf: finalHtmlForPdf // זה השדה שצריך לחבר למודול המרת ה-PDF
+                // הסתרת אלמנטים מיותרים
+                submitBtn.classList.add('hide-in-pdf-export');
+                document.getElementById('add-action-btn').classList.add('hide-in-pdf-export');
+                document.getElementById('clear-sig-btn').classList.add('hide-in-pdf-export');
+                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.add('hide-in-pdf-export'));
+
+                // --- קיבוע אבסולוטי שמונע את החיתוך השמאלי ---
+                window.scrollTo(0, 0);
+                const origClasses = elementToPrint.className;
+                const origCssText = elementToPrint.style.cssText;
+                
+                elementToPrint.className = 'bg-slate-100 text-slate-800 antialiased p-8';
+                elementToPrint.style.position = 'absolute';
+                elementToPrint.style.right = '0'; // מיישר לימין באופן מוחלט
+                elementToPrint.style.top = '0';
+                elementToPrint.style.width = '896px'; // רוחב קבוע כמו max-w-4xl
+                elementToPrint.style.minWidth = '896px';
+                elementToPrint.style.zIndex = '9999';
+
+                // 3. הפקת PDF מקומי
+                const opt = {
+                    margin:       10, 
+                    filename:     'report.pdf',
+                    image:        { type: 'jpeg', quality: 1 },
+                    html2canvas:  { 
+                        scale: 2, 
+                        useCORS: true, 
+                        scrollY: 0,
+                        scrollX: 0,
+                        windowWidth: 920 // קצת מרווח מעבר ל-896
+                    },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: 'avoid-all' }
                 };
 
+                // השהייה למניעת גליצ'ים גרפיים
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                const pdfBase64DataUrl = await html2pdf().set(opt).from(elementToPrint).outputPdf('datauristring');
+                
+                // --- החזרת העיצוב לקדמותו ---
+                elementToPrint.className = origClasses;
+                elementToPrint.style.cssText = origCssText;
+                
+                submitBtn.classList.remove('hide-in-pdf-export');
+                document.getElementById('add-action-btn').classList.remove('hide-in-pdf-export');
+                document.getElementById('clear-sig-btn').classList.remove('hide-in-pdf-export');
+                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.remove('hide-in-pdf-export'));
+
+                // חילוץ ה-Base64
+                formData.pdf_base64 = pdfBase64DataUrl.split(',')[1];
+
+                // 4. שליחת הבקשה לוובהוק
                 const TARGET_WEBHOOK = 'https://hook.eu1.make.com/1ukn154fochpe0xprtqj2be2stujtjed';
                 const response = await fetch(TARGET_WEBHOOK, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(formData)
                 });
 
                 if (response.ok) {
@@ -521,7 +514,7 @@
 
             } catch (error) {
                 console.error('Error submitting form:', error);
-                alert('אירעה שגיאה בתהליך השליחה.');
+                alert('אירעה שגיאה בתהליך עיבוד הטופס.');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
