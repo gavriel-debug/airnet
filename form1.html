@@ -38,10 +38,6 @@
         .hide-in-pdf-export {
             display: none !important;
         }
-        /* מבטיח שהרקע יישאר נקי בצילום */
-        .pdf-export-mode {
-            background-color: #f8fafc !important; 
-        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased py-10 px-4 md:px-0 selection:bg-blue-200" id="main-body">
@@ -259,7 +255,6 @@
         // === שליפת נתונים ראשונית מהוובהוק ===
         (function sendOpenWebhook() {
             const OPEN_WEBHOOK_URL = 'https://hook.eu1.make.com/urdv6soafdq8im88v5pa87j0jp0gjhvx';
-
             const params = new URLSearchParams(window.location.search);
             const payload = {
                 recordid: params.get('recordid') || '',
@@ -325,8 +320,7 @@
                 }
             }
             resizeCanvas();
-            // ביטלתי פה את ההאזנה ל-resize במכוון כדי שזום או שינוי עיצוב לא ימחק את החתימה
-            // window.addEventListener('resize', resizeCanvas); 
+            window.addEventListener('resize', resizeCanvas);
 
             function getPos(e) {
                 const rect = canvas.getBoundingClientRect();
@@ -359,7 +353,6 @@
             };
         })();
 
-        // הוספת שורות דינמיות
         function addDynamicAction() {
             const container = document.getElementById('dynamic-actions');
             const row = document.createElement('div');
@@ -376,23 +369,7 @@
             lucide.createIcons();
         }
 
-        // === פונקציית עזר: צריבת הערכים לתוך ה-HTML (QA Fix) ===
-        function bakeValuesIntoHtml(element) {
-            const inputs = element.querySelectorAll('input, textarea, select');
-            inputs.forEach(input => {
-                if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
-                    input.setAttribute('value', input.value);
-                    if (input.tagName === 'TEXTAREA') input.innerHTML = input.value;
-                } else if (input.tagName === 'SELECT') {
-                    Array.from(input.options).forEach(opt => {
-                        if (opt.value === input.value) opt.setAttribute('selected', 'selected');
-                        else opt.removeAttribute('selected');
-                    });
-                }
-            });
-        }
-
-        // === שליחת הטופס והפקת PDF ===
+        // === השליחה המרכזית ויצירת ה-PDF המושלם ללא פשרות ===
         document.getElementById('main-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -404,7 +381,7 @@
             lucide.createIcons();
 
             try {
-                // 1. איסוף כל השדות לפיילוד JSON
+                // 1. בניית ה-JSON המקורי
                 const formData = {
                     report_number: document.getElementById('report_number').value,
                     treatment_type: document.getElementById('treatment_type').value,
@@ -440,65 +417,83 @@
                 });
                 formData.actions = actions;
 
-                // 2. הכנה לצילום
-                const elementToPrint = document.getElementById('report-container');
-                
-                // צריבת ערכים (מונע באגים של שדות ריקים ב-PDF)
-                bakeValuesIntoHtml(elementToPrint);
+                // 2. יצירת עותק עצמאי (Clone) של ה-Container לטובת ה-PDF
+                const originalContainer = document.getElementById('report-container');
+                const clonedContainer = originalContainer.cloneNode(true);
 
-                // הסתרת אלמנטים מיותרים
-                submitBtn.classList.add('hide-in-pdf-export');
-                document.getElementById('add-action-btn').classList.add('hide-in-pdf-export');
-                document.getElementById('clear-sig-btn').classList.add('hide-in-pdf-export');
-                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.add('hide-in-pdf-export'));
+                // יצירת אלמנט עוטף מבודד זמני מחוץ למסך (מונע בעיות RTL לחלוטין)
+                const workerDiv = document.createElement('div');
+                workerDiv.style.position = 'absolute';
+                workerDiv.style.left = '-9999px';
+                workerDiv.style.top = '-9999px';
+                workerDiv.style.width = '800px'; // רוחב קבוע אופטימלי ל-A4
+                workerDiv.setAttribute('dir', 'rtl');
+                workerDiv.appendChild(clonedContainer);
+                document.body.appendChild(workerDiv);
 
-                // --- קיבוע אבסולוטי שמונע את החיתוך השמאלי ---
-                window.scrollTo(0, 0);
-                const origClasses = elementToPrint.className;
-                const origCssText = elementToPrint.style.cssText;
-                
-                elementToPrint.className = 'bg-slate-100 text-slate-800 antialiased p-8';
-                elementToPrint.style.position = 'absolute';
-                elementToPrint.style.right = '0'; // מיישר לימין באופן מוחלט
-                elementToPrint.style.top = '0';
-                elementToPrint.style.width = '896px'; // רוחב קבוע כמו max-w-4xl
-                elementToPrint.style.minWidth = '896px';
-                elementToPrint.style.zIndex = '9999';
+                // 3. ניקוי אלמנטים מיותרים מהעותק המשוכפל
+                clonedContainer.querySelectorAll('#submit-btn, #add-action-btn, #clear-sig-btn, .delete-action-btn').forEach(el => el.remove());
 
-                // 3. הפקת PDF מקומי
+                // 4. הפיכת שדות קלט (Inputs/Selects) לטקסט סטטי בעותק כדי שלא ישברו עיצוב
+                clonedContainer.querySelectorAll('input, select, textarea').forEach(input => {
+                    const id = input.getAttribute('id');
+                    let val = input.value;
+                    
+                    // אם זה סלקט, ניקח את הטקסט המוצג
+                    if (input.tagName === 'SELECT') {
+                        const selectedOption = input.options[input.selectedIndex];
+                        val = selectedOption ? selectedOption.text : input.value;
+                    }
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'block w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 font-medium min-h-[42px]';
+                    textSpan.style.whiteSpace = 'pre-wrap';
+                    textSpan.innerText = val || '---';
+                    
+                    // החלפה בפועל בדום המשוכפל
+                    input.parentNode.replaceChild(textSpan, input);
+                });
+
+                // 5. טיפול בחתימה בעותק המשוכפל (החלפת ה-Canvas בתמונה קשיחה)
+                const clonedCanvas = clonedContainer.querySelector('#signature-pad');
+                if (clonedCanvas && formData.signature_base64) {
+                    const img = document.createElement('img');
+                    img.src = formData.signature_base64;
+                    img.className = 'w-full bg-white border border-slate-200 rounded-lg min-h-[120px] object-contain';
+                    clonedCanvas.parentNode.replaceChild(img, clonedCanvas);
+                } else if (clonedCanvas) {
+                    const noSigSpan = document.createElement('span');
+                    noSigSpan.className = 'block w-full bg-white border border-slate-200 rounded-lg min-h-[120px] flex items-center justify-center text-slate-400';
+                    noSigSpan.innerText = 'ללא חתימה';
+                    clonedCanvas.parentNode.replaceChild(noSigSpan, clonedCanvas);
+                }
+
+                // 6. הגדרות html2pdf המדויקות
                 const opt = {
-                    margin:       10, 
-                    filename:     'report.pdf',
-                    image:        { type: 'jpeg', quality: 1 },
+                    margin:       [10, 10, 10, 10], // שוליים אחידים מכל הצדדים
+                    filename:     `דו_ח_טיפול_${formData.report_number || 'חדש'}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { 
                         scale: 2, 
-                        useCORS: true, 
+                        useCORS: true,
+                        letterRendering: true,
                         scrollY: 0,
-                        scrollX: 0,
-                        windowWidth: 920 // קצת מרווח מעבר ל-896
+                        scrollX: 0
                     },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak:    { mode: 'avoid-all' }
+                    pagebreak:    { mode: ['avoid-all', 'css'] }
                 };
 
-                // השהייה למניעת גליצ'ים גרפיים
-                await new Promise(resolve => setTimeout(resolve, 600));
-
-                const pdfBase64DataUrl = await html2pdf().set(opt).from(elementToPrint).outputPdf('datauristring');
+                // הפקת ה-PDF מהעותק המבודד
+                const pdfBase64DataUrl = await html2pdf().set(opt).from(clonedContainer).outputPdf('datauristring');
                 
-                // --- החזרת העיצוב לקדמותו ---
-                elementToPrint.className = origClasses;
-                elementToPrint.style.cssText = origCssText;
-                
-                submitBtn.classList.remove('hide-in-pdf-export');
-                document.getElementById('add-action-btn').classList.remove('hide-in-pdf-export');
-                document.getElementById('clear-sig-btn').classList.remove('hide-in-pdf-export');
-                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.remove('hide-in-pdf-export'));
+                // הסרת האלמנט הזמני מהדום לחלוטין
+                workerDiv.remove();
 
-                // חילוץ ה-Base64
+                // חילוץ ה-Base64 הנקי עבור ה-Webhook
                 formData.pdf_base64 = pdfBase64DataUrl.split(',')[1];
 
-                // 4. שליחת הבקשה לוובהוק
+                // 7. שליחה ל-Webhook של Make
                 const TARGET_WEBHOOK = 'https://hook.eu1.make.com/1ukn154fochpe0xprtqj2be2stujtjed';
                 const response = await fetch(TARGET_WEBHOOK, {
                     method: 'POST',
