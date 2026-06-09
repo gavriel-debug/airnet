@@ -24,19 +24,15 @@
     </script>
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
+        /* עיצוב נוסף עבור אנימציות */
         .fade-in-up {
             animation: fadeInUp 0.4s ease-out forwards;
         }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-        .hide-in-pdf-export {
-            display: none !important;
         }
     </style>
 </head>
@@ -250,11 +246,13 @@
     </div>
 
     <script>
+        // אתחול אייקונים
         lucide.createIcons();
 
-        // שליפת נתונים ראשונית
+        // === שליפת נתונים ראשונית מהוובהוק בעת פתיחת הטופס ===
         (function sendOpenWebhook() {
             const OPEN_WEBHOOK_URL = 'https://hook.eu1.make.com/urdv6soafdq8im88v5pa87j0jp0gjhvx';
+
             const params = new URLSearchParams(window.location.search);
             const payload = {
                 recordid: params.get('recordid') || '',
@@ -299,7 +297,7 @@
             .catch(err => console.error('שגיאה בשליחת/קבלת הוובהוק:', err));
         })();
 
-        // חתימה (canvas)
+        // === לוח חתימה (canvas) ===
         (function setupSignaturePad() {
             const canvas = document.getElementById('signature-pad');
             if (!canvas) return;
@@ -358,7 +356,7 @@
             };
         })();
 
-        // הוספת שורות דינמיות
+        // === פעולות דינמיות ===
         function addDynamicAction() {
             const container = document.getElementById('dynamic-actions');
             const row = document.createElement('div');
@@ -375,19 +373,20 @@
             lucide.createIcons();
         }
 
-        // שליחת הטופס + הפקת PDF
+        // === שליחת הטופס ל-Make בלבד ===
         document.getElementById('main-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const submitBtn = document.getElementById('submit-btn');
             const originalText = submitBtn.innerHTML;
             
-            submitBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> מעבד ומייצר מסמך...';
+            // חיווי טעינה
+            submitBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> שולח נתונים...';
             submitBtn.disabled = true;
             lucide.createIcons();
 
             try {
-                // 1. בניית ה-JSON
+                // 1. בניית ה-JSON מכל השדות בטופס
                 const formData = {
                     report_number: document.getElementById('report_number').value,
                     treatment_type: document.getElementById('treatment_type').value,
@@ -410,9 +409,10 @@
                     technician: document.getElementById('technician').value,
                     form_date: document.getElementById('form_date').value,
                     form_time: document.getElementById('form_time').value,
-                    signature_base64: window.getSignatureDataUrl()
+                    signature_base64: window.getSignatureDataUrl() // שולח את החתימה כטקסט Base64
                 };
 
+                // איסוף הפעולות הדינמיות
                 const actions = [];
                 document.querySelectorAll('.dynamic-row').forEach(row => {
                     const name = row.querySelector('.action-name').value;
@@ -423,56 +423,7 @@
                 });
                 formData.actions = actions;
 
-                // 2. הכנה לצילום המסך - הסתרת כפתורים
-                submitBtn.classList.add('hide-in-pdf-export');
-                document.getElementById('add-action-btn').classList.add('hide-in-pdf-export');
-                document.getElementById('clear-sig-btn').classList.add('hide-in-pdf-export');
-                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.add('hide-in-pdf-export'));
-
-                const elementToPrint = document.getElementById('report-container');
-                
-                // --- הפתרון הסופי לחיתוך השמאלי ---
-                // גלילה למעלה
-                window.scrollTo(0, 0);
-
-                // קיבוע רוחב זמני לפני הצילום
-                const originalWidth = elementToPrint.style.width;
-                const originalMaxWidth = elementToPrint.style.maxWidth;
-                elementToPrint.style.width = '800px';
-                elementToPrint.style.maxWidth = '800px';
-
-                const opt = {
-                    margin:       [10, 10, 10, 10], 
-                    filename:     'report.pdf',
-                    image:        { type: 'jpeg', quality: 1 },
-                    html2canvas:  { 
-                        scale: 2, 
-                        useCORS: true, 
-                        scrollY: 0,
-                        scrollX: 0,
-                        windowWidth: 900 // מכריח חלון וירטואלי גדול יותר מרוחב האלמנט
-                    },
-                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak:    { mode: 'avoid-all' }
-                };
-
-                // השהייה כדי לתת לדפדפן להעלים את הכפתורים ולקבע רוחב
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                const pdfBase64DataUrl = await html2pdf().set(opt).from(elementToPrint).outputPdf('datauristring');
-                
-                // החזרת עיצוב המסך לקדמותו
-                elementToPrint.style.width = originalWidth;
-                elementToPrint.style.maxWidth = originalMaxWidth;
-                
-                submitBtn.classList.remove('hide-in-pdf-export');
-                document.getElementById('add-action-btn').classList.remove('hide-in-pdf-export');
-                document.getElementById('clear-sig-btn').classList.remove('hide-in-pdf-export');
-                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.remove('hide-in-pdf-export'));
-
-                // חילוץ המחרוזת ושליחה לוובהוק
-                formData.pdf_base64 = pdfBase64DataUrl.split(',')[1];
-
+                // 2. שליחת הבקשה לוובהוק ב-Make
                 const TARGET_WEBHOOK = 'https://hook.eu1.make.com/1ukn154fochpe0xprtqj2be2stujtjed';
                 const response = await fetch(TARGET_WEBHOOK, {
                     method: 'POST',
@@ -481,7 +432,10 @@
                 });
 
                 if (response.ok) {
-                    alert('הדו"ח והמסמך נשלחו בהצלחה!');
+                    alert('הדו"ח נשלח בהצלחה למערכת!');
+                    // אופציונלי: לנקות את הטופס אחרי השליחה
+                    // document.getElementById('main-form').reset();
+                    // clearSignature();
                 } else {
                     alert('שגיאה בשליחת הדו"ח. אנא נסה שוב.');
                 }
@@ -490,6 +444,7 @@
                 console.error('Error submitting form:', error);
                 alert('אירעה שגיאה בתהליך עיבוד הטופס.');
             } finally {
+                // שחזור מצב הכפתור
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
                 lucide.createIcons();
