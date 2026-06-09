@@ -365,7 +365,7 @@
             lucide.createIcons();
         }
 
-        // === השליחה המרכזית: יצירת PDF קשיח ויציב בכל רזולוציה ומסך ===
+        // === השליחה המרכזית: יצירת PDF ממורכז ומושלם (ללא חיתוך צד שמאל) ===
         document.getElementById('main-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -413,9 +413,9 @@
                 });
                 formData.actions = actions;
 
-                // 2. תבנית HTML קשיחה מבוססת CSS Grid מודרני מיועדת ספציפית לרוחב דף A4
+                // 2. תבנית HTML קשיחה מיועדת ספציפית ל-PDF ברוחב מדויק 
                 const pdfTemplateHTML = `
-                <div style="width: 750px; padding: 30px; background: #ffffff; direction: rtl; font-family: system-ui, -apple-system, sans-serif; color: #1e293b; box-sizing: border-box;">
+                <div dir="rtl" style="width: 794px; padding: 40px; background: #ffffff; font-family: system-ui, -apple-system, sans-serif; color: #1e293b; box-sizing: border-box; min-height: 1123px;">
                     
                     <div style="background: #0f172a; color: #ffffff; padding: 25px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -496,7 +496,7 @@
                         <div style="border: 2px dashed #cbd5e1; background: #f8fafc; border-radius: 12px; padding: 14px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 110px;">
                             <h3 style="margin: 0 0 auto 0; font-size: 12px; font-weight: bold; color: #64748b; width: 100%; text-align: right; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">חתימת הלקוח</h3>
                             <div style="margin-top: auto; margin-bottom: auto; width: 100%; display: flex; justify-content: center; align-items: center;">
-                                ${formData.signature_base64 ? `<img src="${formData.signature_base64}" style="max-height: 75px; max-width: 90%; object-contain: true;">` : '<span style="color: #94a3b8; font-size: 13px; font-weight: 500; padding: 15px 0;">ללא חתימה</span>'}
+                                ${formData.signature_base64 ? `<img src="${formData.signature_base64}" style="max-height: 75px; max-width: 90%; object-fit: contain;">` : '<span style="color: #94a3b8; font-size: 13px; font-weight: 500; padding: 15px 0;">ללא חתימה</span>'}
                             </div>
                         </div>
                     </div>
@@ -504,19 +504,24 @@
                 </div>
                 `;
 
-                // 3. יצירת אלמנט עוטף בלתי נראה לחלוטין לצורך הרינדור
+                // 3. הזרקת ה-HTML במבנה מיוחד שמונע חיתוך בצד שמאל
                 const renderContainer = document.createElement('div');
-                renderContainer.innerHTML = pdfTemplateHTML;
+                // ה"קסם": כופים כיווניות LTR על העוטף ומתחילים מ-X=0 בדיוק!
+                renderContainer.setAttribute('dir', 'ltr'); 
                 renderContainer.style.position = 'absolute';
-                renderContainer.style.top = '-9999px';
-                renderContainer.style.left = '-9999px';
-                renderContainer.style.width = '750px';
-                renderContainer.style.opacity = '0';
+                // מסתירים את התבנית גבוה למעלה כדי שלא תפריע לחוויית המשתמש, אבל משאירים אותה באפס האופקי (X=0)
+                renderContainer.style.top = '-9999px'; 
+                renderContainer.style.left = '0'; 
+                renderContainer.style.width = '794px'; // מידת A4 מוחלטת בפיקסלים
+                renderContainer.style.zIndex = '-9999';
+                renderContainer.style.backgroundColor = '#ffffff';
+
+                renderContainer.innerHTML = pdfTemplateHTML;
                 document.body.appendChild(renderContainer);
 
-                // 4. קונפיגורציית ה-PDF המדויקת
+                // 4. הגדרות הספרייה
                 const opt = {
-                    margin:       [12, 12, 12, 12],
+                    margin:       0, // השוליים כבר הוגדרו בפאדינג ב-HTML
                     filename:     `דו_ח_טיפול_${formData.report_number}.pdf`,
                     image:        { type: 'jpeg', quality: 1 },
                     html2canvas:  { 
@@ -524,22 +529,21 @@
                         useCORS: true,
                         scrollY: 0,
                         scrollX: 0,
-                        windowWidth: 750
+                        windowWidth: 794 // אומרים לקנבס לא להסתכל על רוחב המסך אלא על רוחב האלמנט
                     },
-                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak:    { mode: ['avoid-all'] }
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                // הפקת ה-PDF מתוך אלמנט ה-HTML הנקי והמבודד
+                // הפקת ה-PDF מתוך האלמנט הנסתר
                 const pdfBase64DataUrl = await html2pdf().set(opt).from(renderContainer.firstElementChild).outputPdf('datauristring');
                 
-                // הסרת האלמנט הזמני מה-DOM
+                // ניקוי
                 document.body.removeChild(renderContainer);
 
-                // חילוץ ה-Base64 הנקי
+                // חילוץ ה-Base64
                 formData.pdf_base64 = pdfBase64DataUrl.split(',')[1];
 
-                // 5. שליחה לוובהוק של Make
+                // 5. שליחה לוובהוק
                 const TARGET_WEBHOOK = 'https://hook.eu1.make.com/1ukn154fochpe0xprtqj2be2stujtjed';
                 const response = await fetch(TARGET_WEBHOOK, {
                     method: 'POST',
