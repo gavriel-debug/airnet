@@ -1,3 +1,8 @@
+הנה הקוד המלא והסופי. שילבתי פה את כל התיקונים: מנגנון ה-RTL שמונע את חיתוך הטקסט בצדדים, מניעת העמודים הריקים, והסתרת הכפתורים ב-PDF.
+
+פשוט העתק את כל הבלוק הזה, שמור, ונסה לשלוח שוב – ה-PDF אמור לצאת מדויק, נקי ומלא.
+
+```html
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -438,20 +443,23 @@
                 // 3. הפקת PDF מקומי (מחזיר Base64)
                 const elementToPrint = document.getElementById('report-container');
                 
-                // קריטי: גלילה לראש העמוד למניעת חיתוכים
+                // קריטי: גלילה לראש העמוד
                 window.scrollTo(0, 0);
 
+                // --- הטריק ל-RTL ---
+                // ביטול המרכוז והגדרת רוחב קבוע זמנית כדי למנוע את החיתוך בצדדים
+                elementToPrint.classList.remove('max-w-4xl', 'mx-auto');
+                elementToPrint.style.width = '800px'; 
+                elementToPrint.style.margin = '0';
+
                 const opt = {
-                    margin:       [10, 10, 10, 10], // שוליים
+                    margin:       10, 
                     filename:     'report.pdf',
                     image:        { type: 'jpeg', quality: 1 },
                     html2canvas:  { 
                         scale: 2, 
                         useCORS: true, 
-                        windowWidth: 1024,
-                        scrollY: 0,
-                        x: 0,
-                        y: 0
+                        scrollY: 0
                     },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak:    { mode: 'avoid-all' }
@@ -461,6 +469,11 @@
                 await new Promise(resolve => setTimeout(resolve, 500));
 
                 const pdfBase64DataUrl = await html2pdf().set(opt).from(elementToPrint).outputPdf('datauristring');
+                
+                // --- החזרת העיצוב למצב רגיל במסך ---
+                elementToPrint.classList.add('max-w-4xl', 'mx-auto');
+                elementToPrint.style.width = '';
+                elementToPrint.style.margin = '';
                 
                 // החזרת הכפתורים למסך
                 submitBtn.classList.remove('hide-in-pdf-export');
@@ -498,3 +511,5 @@
     </script>
 </body>
 </html>
+
+```
