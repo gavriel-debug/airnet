@@ -421,20 +421,23 @@
                 const originalContainer = document.getElementById('report-container');
                 const clonedContainer = originalContainer.cloneNode(true);
 
-                // אילוץ גודל דסקטופ מותאם בדיוק ל-A4 (מונע חיתוך שוליים)
+                // אילוץ רוחב נוח (850px) שמאפשר לטקסט לרדת שורה בטבעיות ולא להחתך
                 const workerDiv = document.createElement('div');
                 workerDiv.style.position = 'absolute';
                 workerDiv.style.left = '-9999px';
                 workerDiv.style.top = '-9999px';
-                workerDiv.style.width = '794px'; 
+                workerDiv.style.width = '850px'; 
                 workerDiv.setAttribute('dir', 'rtl');
+                
+                // שינוי הקלאס של ה-Container כך שיתפוס את כל הרוחב המאולץ
+                clonedContainer.className = 'w-full';
                 workerDiv.appendChild(clonedContainer);
                 document.body.appendChild(workerDiv);
 
                 // 3. ניקוי אלמנטים מיותרים מהעותק המשוכפל
                 clonedContainer.querySelectorAll('#submit-btn, #add-action-btn, #clear-sig-btn, .delete-action-btn').forEach(el => el.remove());
 
-                // 4. הפיכת שדות קלט לטקסט תוך שמירה על העיצוב המקורי שלהם
+                // 4. הפיכת שדות קלט לטקסט תוך שמירה על העיצוב המקורי
                 clonedContainer.querySelectorAll('input, select, textarea').forEach(input => {
                     let val = input.value;
                     if (input.tagName === 'SELECT') {
@@ -443,29 +446,27 @@
                     }
 
                     const div = document.createElement('div');
-                    // העתקת העיצוב המקורי
-                    div.className = input.className.replace(/focus:[^\s]+/g, ''); 
+                    // העתקת העיצוב המקורי, והפיכה לבלוק סטנדרטי (מונע בעיות גלישה)
+                    div.className = input.className.replace(/focus:[^\s]+/g, '').replace(/outline-none/g, ''); 
                     div.style.whiteSpace = 'pre-wrap';
                     div.style.wordBreak = 'break-word';
-                    div.style.display = 'flex';
-                    div.style.alignItems = input.tagName === 'TEXTAREA' ? 'flex-start' : 'center';
+                    div.style.display = 'block'; 
                     div.style.minHeight = '42px';
                     div.style.padding = '0.5rem 0.75rem';
                     
-                    // כפיית עיצוב צבעים ספציפי כדי למנוע את הרקע הלבן הלא ברור בהדר
                     if (input.id === 'report_number' || input.id === 'treatment_type') {
                         div.style.backgroundColor = '#1e293b'; 
                         div.style.color = '#ffffff';
                         div.style.borderColor = '#334155';
                         div.style.borderWidth = '1px';
                         div.style.borderStyle = 'solid';
+                        div.style.fontWeight = 'bold';
                     } else {
                         div.style.backgroundColor = input.classList.contains('bg-white') ? '#ffffff' : '#f8fafc';
                         div.style.color = '#1e293b';
                     }
 
                     div.innerText = val || '---';
-                    
                     input.parentNode.replaceChild(div, input);
                 });
 
@@ -483,25 +484,53 @@
                     clonedCanvas.parentNode.replaceChild(noSigSpan, clonedCanvas);
                 }
 
-                // --- פתרון הקסם 2.0: תיקון העלמת הרווחים בעברית ללא חיתוך מילים ---
-                function fixHebrewSpaces(element) {
-                    element.childNodes.forEach(child => {
-                        if (child.nodeType === Node.TEXT_NODE && child.nodeValue.trim()) {
-                            // עוטפים כל רווח בתו מפריד נסתר (ZWNJ) כדי שהספרייה לא תבלע אותו,
-                            // ועדיין שומרים על רווח רגיל שמאפשר שבירת שורות תקינה.
-                            child.nodeValue = child.nodeValue.replace(/ /g, '\u200C \u200C');
-                        } else if (child.nodeType === Node.ELEMENT_NODE) {
-                            fixHebrewSpaces(child);
+                // --- הפתרון המנצח: עטיפת כל מילה בודדת בקופסה (Bypassing html2canvas RTL bug) ---
+                function wrapWordsInSpans(element) {
+                    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+                    const nodes = [];
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        // אוספים רק טקסט אמיתי, מדלגים על סקריפטים ועיצובים
+                        if (node.nodeValue.trim() !== '' && 
+                            node.parentNode && 
+                            node.parentNode.tagName !== 'SCRIPT' && 
+                            node.parentNode.tagName !== 'STYLE') {
+                            nodes.push(node);
+                        }
+                    }
+                    
+                    nodes.forEach(n => {
+                        const words = n.nodeValue.split(/(\s+)/); // שומר על הרווחים במערך
+                        const fragment = document.createDocumentFragment();
+                        let wrapped = false;
+                        
+                        words.forEach(word => {
+                            if (word.trim() === '') {
+                                // זהו רווח - משאירים אותו כטקסט רגיל שהדפדפן יוכל לשבור שורה באמצעותו
+                                fragment.appendChild(document.createTextNode(word));
+                            } else {
+                                // זוהי מילה - עוטפים אותה ב-inline-block כדי ש-html2canvas ימדוד אותה כמקשה אחת
+                                const span = document.createElement('span');
+                                span.style.display = 'inline-block';
+                                span.innerText = word;
+                                fragment.appendChild(span);
+                                wrapped = true;
+                            }
+                        });
+                        
+                        if (wrapped) {
+                            n.parentNode.replaceChild(fragment, n);
                         }
                     });
                 }
-                fixHebrewSpaces(clonedContainer);
+                
+                wrapWordsInSpans(clonedContainer);
                 // ------------------------------------------------
 
                 // הבטחה שכל הפונטים סיימו להיטען לפני צילום המסמך
                 await document.fonts.ready;
 
-                // 6. הגדרות html2pdf המותאמות בדיוק ל-A4
+                // 6. הגדרות html2pdf
                 const opt = {
                     margin:       [10, 10, 10, 10],
                     filename:     `דו_ח_טיפול_${formData.report_number || 'חדש'}.pdf`,
@@ -511,7 +540,7 @@
                         useCORS: true,
                         scrollY: 0,
                         scrollX: 0,
-                        windowWidth: 794 
+                        windowWidth: 850 
                     },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak:    { mode: ['avoid-all', 'css'] }
