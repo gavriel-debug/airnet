@@ -38,6 +38,41 @@
         .hide-in-pdf-export {
             display: none !important;
         }
+        /* תיקונים נקודתיים לייצוא PDF בעברית */
+        .pdf-export,
+        .pdf-export * {
+            font-family: 'Heebo', Arial, sans-serif !important;
+            direction: rtl;
+            letter-spacing: normal !important;
+            text-rendering: geometricPrecision;
+        }
+        .pdf-field {
+            display: block;
+            width: 100%;
+            min-height: 42px;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.5rem;
+            padding: 0.625rem 1rem;
+            color: #1e293b !important;
+            font-weight: 500;
+            line-height: 1.65;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            word-spacing: 0.12em;
+            unicode-bidi: plaintext;
+            box-sizing: border-box;
+        }
+        .pdf-header-field {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            min-height: 40px;
+            padding: 0.5rem 0.75rem;
+            line-height: 1.55;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased py-10 px-4 md:px-0 selection:bg-blue-200" id="main-body">
@@ -420,6 +455,10 @@
                 // 2. יצירת עותק עצמאי (Clone) של ה-Container לטובת ה-PDF
                 const originalContainer = document.getElementById('report-container');
                 const clonedContainer = originalContainer.cloneNode(true);
+                clonedContainer.classList.add('pdf-export');
+                clonedContainer.setAttribute('dir', 'rtl');
+                clonedContainer.style.width = '800px';
+                clonedContainer.style.maxWidth = '800px';
 
                 // יצירת אלמנט עוטף מבודד זמני מחוץ למסך (מונע בעיות RTL לחלוטין)
                 const workerDiv = document.createElement('div');
@@ -446,9 +485,11 @@
                     }
 
                     const textSpan = document.createElement('span');
-                    textSpan.className = 'block w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 font-medium min-h-[42px]';
-                    textSpan.style.whiteSpace = 'pre-wrap';
-                    textSpan.innerText = val || '---';
+                    const isHeaderField = id === 'report_number' || id === 'treatment_type';
+                    textSpan.className = isHeaderField ? 'pdf-field pdf-header-field' : 'pdf-field';
+                    textSpan.setAttribute('dir', 'rtl');
+                    textSpan.setAttribute('lang', 'he');
+                    textSpan.textContent = val && String(val).trim() ? String(val) : '---';
                     
                     // החלפה בפועל בדום המשוכפל
                     input.parentNode.replaceChild(textSpan, input);
@@ -476,13 +517,19 @@
                     html2canvas:  { 
                         scale: 2, 
                         useCORS: true,
-                        letterRendering: true,
+                        letterRendering: false,
                         scrollY: 0,
                         scrollX: 0
                     },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak:    { mode: ['avoid-all', 'css'] }
                 };
+
+                // מוודא שהפונט נטען לפני הרינדור - חשוב במיוחד לעברית ב-html2canvas
+                if (document.fonts && document.fonts.ready) {
+                    await document.fonts.ready;
+                }
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
                 // הפקת ה-PDF מהעותק המבודד
                 const pdfBase64DataUrl = await html2pdf().set(opt).from(clonedContainer).outputPdf('datauristring');
