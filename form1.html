@@ -443,12 +443,27 @@
                     }
 
                     const div = document.createElement('div');
-                    // העתקת העיצוב המקורי כדי ששדות ה-Header יישארו כהים
+                    // העתקת העיצוב המקורי
                     div.className = input.className.replace(/focus:[^\s]+/g, ''); 
                     div.style.whiteSpace = 'pre-wrap';
                     div.style.display = 'flex';
                     div.style.alignItems = input.tagName === 'TEXTAREA' ? 'flex-start' : 'center';
                     div.style.minHeight = '42px';
+                    div.style.padding = '0.5rem 0.75rem'; // שומר על המרווח הפנימי
+                    
+                    // כפיית עיצוב צבעים ספציפי כדי למנוע את "הרקע הלבן הלא ברור" ב-PDF
+                    if (input.id === 'report_number' || input.id === 'treatment_type') {
+                        div.style.backgroundColor = '#1e293b'; // צבע כהה תואם להדר
+                        div.style.color = '#ffffff';
+                        div.style.borderColor = '#334155';
+                        div.style.borderWidth = '1px';
+                        div.style.borderStyle = 'solid';
+                    } else {
+                        // שאר השדות
+                        div.style.backgroundColor = input.classList.contains('bg-white') ? '#ffffff' : '#f8fafc';
+                        div.style.color = '#1e293b';
+                    }
+
                     div.innerText = val || '---';
                     
                     input.parentNode.replaceChild(div, input);
@@ -468,10 +483,25 @@
                     clonedCanvas.parentNode.replaceChild(noSigSpan, clonedCanvas);
                 }
 
-                // הבטחה שכל הפונטים סיימו להיטען לפני צילום המסמך (למניעת טשטוש)
+                // --- פתרון הקסם: תיקון העלמת הרווחים בעברית ---
+                function fixHebrewSpaces(element) {
+                    element.childNodes.forEach(child => {
+                        // מוודאים שזהו טקסט נקי ולא תגית HTML
+                        if (child.nodeType === Node.TEXT_NODE && child.nodeValue.trim()) {
+                            // מחליפים רווח רגיל ברווח קשיח + תו שבירת שורה נסתר (Zero-Width Space)
+                            child.nodeValue = child.nodeValue.replace(/ /g, '\u00A0\u200B');
+                        } else if (child.nodeType === Node.ELEMENT_NODE) {
+                            fixHebrewSpaces(child); // קריאה רקורסיבית פנימה
+                        }
+                    });
+                }
+                fixHebrewSpaces(clonedContainer);
+                // ------------------------------------------------
+
+                // הבטחה שכל הפונטים סיימו להיטען לפני צילום המסמך
                 await document.fonts.ready;
 
-                // 6. הגדרות html2pdf - ללא letterRendering ותמיכה בדסקטופ
+                // 6. הגדרות html2pdf
                 const opt = {
                     margin:       [10, 10, 10, 10],
                     filename:     `דו_ח_טיפול_${formData.report_number || 'חדש'}.pdf`,
@@ -487,7 +517,7 @@
                     pagebreak:    { mode: ['avoid-all', 'css'] }
                 };
 
-                // הפקת ה-PDF מהעותק המבודד
+                // הפקת ה-PDF
                 const pdfBase64DataUrl = await html2pdf().set(opt).from(clonedContainer).outputPdf('datauristring');
                 
                 // הסרת האלמנט הזמני מהדום
