@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>טופס דו"ח טיפול - א.א.רם</title>
     
-    <!-- פונט עברי מודרני -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- הגדרת פונט מותאם אישית ב-Tailwind -->
     <script>
         tailwind.config = {
             theme: {
@@ -26,8 +23,9 @@
         }
     </script>
 
-    <!-- אייקונים -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         /* עיצוב נוסף עבור אנימציות */
@@ -38,15 +36,17 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* מחלקה להסתרת אלמנטים בזמן יצירת PDF */
+        .hide-in-pdf-export {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased py-10 px-4 md:px-0 selection:bg-blue-200">
 
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-4xl mx-auto" id="report-container">
         
-        <!-- כותרת הטופס (הדר) -->
         <div class="bg-slate-900 text-white rounded-t-2xl p-8 relative overflow-hidden shadow-lg">
-            <!-- אלמנט עיצובי ברקע -->
             <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
                 <div class="absolute -top-20 -left-20 w-80 h-80 bg-blue-500 rounded-full blur-3xl"></div>
             </div>
@@ -69,10 +69,8 @@
             </div>
         </div>
 
-        <!-- גוף הטופס -->
-        <form class="bg-white rounded-b-2xl shadow-xl border border-slate-200 p-8 space-y-10" onsubmit="event.preventDefault(); alert('הטופס נשלח בהצלחה!');">
+        <form id="main-form" class="bg-white rounded-b-2xl shadow-xl border border-slate-200 p-8 space-y-10">
 
-            <!-- פרטי הלקוח -->
             <section>
                 <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
                     <i data-lucide="building-2" class="text-blue-600"></i>
@@ -103,7 +101,6 @@
             </section>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <!-- פרטי מסנן קו -->
                 <section>
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
                         <i data-lucide="settings" class="text-blue-600"></i>
@@ -125,7 +122,6 @@
                     </div>
                 </section>
 
-                <!-- נתוני מכונה וחדר -->
                 <section>
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
                         <i data-lucide="gauge" class="text-blue-600"></i>
@@ -134,36 +130,36 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">לחץ עבודה</label>
-                            <input type="text" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
+                            <input type="text" id="work_pressure" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">דליפות אויר</label>
-                            <select class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
+                            <select id="air_leaks" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
                                 <option value="לא">לא</option>
                                 <option value="כן">כן</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">טמפ' עבודה</label>
-                            <input type="text" placeholder="°C" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
+                            <input type="text" id="work_temp" placeholder="°C" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">נקיון חדר</label>
-                            <select class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
+                            <select id="room_cleanliness" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
                                 <option value="תקין">תקין</option>
                                 <option value="לא תקין">לא תקין</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">טמפ' בחדר</label>
-                            <select class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
+                            <select id="room_temp" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
                                 <option value="תקין">תקין</option>
                                 <option value="לא תקין">לא תקין</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">בדיקת מייבש</label>
-                            <select class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
+                            <select id="dryer_check" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all appearance-none">
                                 <option value="תקין">תקין</option>
                                 <option value="לא תקין">לא תקין</option>
                             </select>
@@ -172,7 +168,6 @@
                 </section>
             </div>
 
-            <!-- מהות הקריאה והטיפול -->
             <section class="bg-blue-50/50 rounded-xl p-6 border border-blue-100">
                 <div class="flex items-center gap-2 mb-6">
                     <i data-lucide="wrench" class="text-blue-600"></i>
@@ -184,22 +179,19 @@
                     <textarea rows="2" id="call_nature" placeholder="לדוגמה: החלפת אלמנט..." class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all resize-y"></textarea>
                 </div>
 
-                <!-- סקשן פעולות דינאמי -->
                 <div class="mb-6">
                     <label class="block text-sm font-bold text-slate-700 mb-2">פעולות שבוצעו</label>
-                    
                     <div id="dynamic-actions" class="space-y-3 mb-4">
-                        <!-- שורת פעולה ראשונה -->
-                        <div class="flex flex-col md:flex-row gap-3 items-start md:items-center">
-                            <input type="text" placeholder="שם הפעולה" class="w-full md:w-1/3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all font-medium">
-                            <input type="text" placeholder="תיאור מורחב" class="w-full md:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all">
-                            <button type="button" onclick="this.parentElement.remove()" class="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
+                        <div class="flex flex-col md:flex-row gap-3 items-start md:items-center dynamic-row">
+                            <input type="text" placeholder="שם הפעולה" class="action-name w-full md:w-1/3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all font-medium">
+                            <input type="text" placeholder="תיאור מורחב" class="action-desc w-full md:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all">
+                            <button type="button" onclick="this.parentElement.remove()" class="delete-action-btn p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
                                 <i data-lucide="trash-2" class="w-5 h-5"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="button" onclick="addDynamicAction()" class="flex items-center gap-2 text-sm font-bold text-blue-600 bg-white border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 px-5 py-2.5 rounded-lg transition-all w-full md:w-auto justify-center">
+                    <button type="button" id="add-action-btn" onclick="addDynamicAction()" class="flex items-center gap-2 text-sm font-bold text-blue-600 bg-white border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 px-5 py-2.5 rounded-lg transition-all w-full md:w-auto justify-center">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         הוסף פעולה נוספת
                     </button>
@@ -207,45 +199,40 @@
 
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-2">הערות והמלצות</label>
-                    <textarea rows="3" placeholder="הערות להמשך הטיפול, המלצות ללקוח..." class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all resize-y"></textarea>
+                    <textarea id="notes" rows="3" placeholder="הערות להמשך הטיפול, המלצות ללקוח..." class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all resize-y"></textarea>
                 </div>
             </section>
 
-            <!-- סיום ואישורים -->
             <section class="border-t border-slate-200 pt-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- פרטי השירות -->
                     <div class="space-y-5 bg-slate-50 p-6 rounded-xl border border-slate-100">
                         <h3 class="font-bold text-slate-800 border-b border-slate-200 pb-2">פרטי המבצע</h3>
-                        
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">השירות ניתן על ידי:</label>
-                            <input type="text" placeholder="שם הטכנאי" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
+                            <input type="text" id="technician" placeholder="שם הטכנאי" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-1.5">תאריך</label>
-                                <input type="date" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
+                                <input type="date" id="form_date" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-1.5">שעה</label>
-                                <input type="time" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
+                                <input type="time" id="form_time" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none transition-all">
                             </div>
                         </div>
                     </div>
 
-                    <!-- חתימה -->
                     <div class="flex flex-col justify-between bg-slate-50 p-6 rounded-xl border border-slate-100">
                         <div class="flex items-center gap-2 mb-4">
                             <i data-lucide="pen-tool" class="text-blue-600"></i>
                             <h3 class="font-bold text-slate-800">חתימת הלקוח</h3>
                         </div>
                         
-                        <!-- אזור חתימה (canvas אמיתי - עכבר + מגע) -->
                         <canvas id="signature-pad" class="flex-1 w-full bg-white border-2 border-dashed border-slate-300 rounded-lg cursor-crosshair touch-none min-h-[120px] hover:border-blue-400 transition-colors"></canvas>
                         <div class="flex justify-between items-center mt-2">
                             <span class="text-xs text-slate-400 font-medium">חתום באמצעות העכבר או האצבע</span>
-                            <button type="button" onclick="clearSignature()" class="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-red-500 transition-colors">
+                            <button type="button" id="clear-sig-btn" onclick="clearSignature()" class="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-red-500 transition-colors">
                                 <i data-lucide="eraser" class="w-4 h-4"></i>
                                 נקה חתימה
                             </button>
@@ -254,9 +241,8 @@
                 </div>
             </section>
 
-            <!-- כפתור שליחה ענק -->
             <div class="pt-4">
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2">
+                <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2">
                     <i data-lucide="send" class="w-5 h-5"></i>
                     שמור ושלח דו"ח
                 </button>
@@ -269,25 +255,22 @@
         // אתחול אייקונים
         lucide.createIcons();
 
-        // === שליחת וובהוק בעת פתיחת הטופס + מילוי אוטומטי מהתשובה ===
+        // === שליפת נתונים ראשונית מהוובהוק בעת פתיחת הטופס ===
         (function sendOpenWebhook() {
-            const WEBHOOK_URL = 'https://hook.eu1.make.com/urdv6soafdq8im88v5pa87j0jp0gjhvx';
+            const OPEN_WEBHOOK_URL = 'https://hook.eu1.make.com/urdv6soafdq8im88v5pa87j0jp0gjhvx';
 
-            // קריאת הפרמטרים מה-URL
             const params = new URLSearchParams(window.location.search);
             const payload = {
                 recordid: params.get('recordid') || '',
                 tanantid: params.get('tanantid') || ''
             };
 
-            // ממלא שדה רק אם הערך קיים ולא ריק (כדי לא לדרוס ערכי ברירת מחדל)
             function setVal(id, value) {
                 if (value === undefined || value === null || value === '') return;
                 const el = document.getElementById(id);
                 if (el) el.value = value;
             }
 
-            // מיפוי המפתחות מה-JSON אל שדות הטופס
             function fillForm(data) {
                 if (!data || typeof data !== 'object') return;
                 setVal('report_number', data.report_number);
@@ -303,13 +286,12 @@
                 setVal('call_nature',   data.call_nature);
             }
 
-            // שליחת POST עם JSON ל-Make, וקריאת התשובה
-            fetch(WEBHOOK_URL, {
+            fetch(OPEN_WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-            .then(res => res.text())            // קוראים כטקסט ואז מנסים לפרסר (עמיד יותר)
+            .then(res => res.text())
             .then(text => {
                 try {
                     const data = JSON.parse(text);
@@ -329,7 +311,6 @@
             let drawing = false;
             let hasSignature = false;
 
-            // התאמת רזולוציית ה-canvas לגודל בפועל ולצפיפות הפיקסלים (חתימה חדה)
             function resizeCanvas() {
                 const ratio = window.devicePixelRatio || 1;
                 const rect = canvas.getBoundingClientRect();
@@ -372,7 +353,6 @@
             canvas.addEventListener('pointerup',   () => { drawing = false; });
             canvas.addEventListener('pointercancel',() => { drawing = false; });
 
-            // זמינות גלובלית: ניקוי + שליפת החתימה כ-base64
             window.clearSignature = function () {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 hasSignature = false;
@@ -382,27 +362,127 @@
             };
         })();
 
-        // פונקציה להוספת שורות פעולה בצורה דינאמית
+        // === פעולות דינמיות ===
         function addDynamicAction() {
             const container = document.getElementById('dynamic-actions');
-            
-            // יצירת האלמנט החדש
             const row = document.createElement('div');
-            row.className = 'flex flex-col md:flex-row gap-3 items-start md:items-center fade-in-up';
+            row.className = 'flex flex-col md:flex-row gap-3 items-start md:items-center fade-in-up dynamic-row';
             
             row.innerHTML = `
-                <input type="text" placeholder="שם הפעולה" class="w-full md:w-1/3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all font-medium">
-                <input type="text" placeholder="תיאור מורחב" class="w-full md:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all">
-                <button type="button" onclick="this.parentElement.remove()" class="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
+                <input type="text" placeholder="שם הפעולה" class="action-name w-full md:w-1/3 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all font-medium">
+                <input type="text" placeholder="תיאור מורחב" class="action-desc w-full md:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500/40 outline-none transition-all">
+                <button type="button" onclick="this.parentElement.remove()" class="delete-action-btn p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100" title="מחק שורה">
                     <i data-lucide="trash-2" class="w-5 h-5"></i>
                 </button>
             `;
-            
             container.appendChild(row);
-            
-            // אתחול מחדש של האייקונים כדי שיופיעו בשורה החדשה
             lucide.createIcons();
         }
+
+        // === שליחת הטופס והפקת PDF לוובהוק ===
+        document.getElementById('main-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerHTML;
+            
+            // חיווי טעינה
+            submitBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> מעבד ומייצר מסמך...';
+            submitBtn.disabled = true;
+            lucide.createIcons();
+
+            try {
+                // 1. איסוף כל השדות לפיילוד JSON
+                const formData = {
+                    report_number: document.getElementById('report_number').value,
+                    treatment_type: document.getElementById('treatment_type').value,
+                    client_name: document.getElementById('client_name').value,
+                    client_id: document.getElementById('client_id').value,
+                    address: document.getElementById('address').value,
+                    phone: document.getElementById('phone').value,
+                    approver: document.getElementById('approver').value,
+                    manufacturer: document.getElementById('manufacturer').value,
+                    model: document.getElementById('model').value,
+                    serial_number: document.getElementById('serial_number').value,
+                    work_pressure: document.getElementById('work_pressure').value,
+                    air_leaks: document.getElementById('air_leaks').value,
+                    work_temp: document.getElementById('work_temp').value,
+                    room_cleanliness: document.getElementById('room_cleanliness').value,
+                    room_temp: document.getElementById('room_temp').value,
+                    dryer_check: document.getElementById('dryer_check').value,
+                    call_nature: document.getElementById('call_nature').value,
+                    notes: document.getElementById('notes').value,
+                    technician: document.getElementById('technician').value,
+                    form_date: document.getElementById('form_date').value,
+                    form_time: document.getElementById('form_time').value,
+                    signature_base64: window.getSignatureDataUrl()
+                };
+
+                // איסוף מערך הפעולות הדינמיות
+                const actions = [];
+                document.querySelectorAll('.dynamic-row').forEach(row => {
+                    const name = row.querySelector('.action-name').value;
+                    const desc = row.querySelector('.action-desc').value;
+                    if (name || desc) {
+                        actions.push({ name, description: desc });
+                    }
+                });
+                formData.actions = actions;
+
+                // 2. הכנת ה-DOM לצילום (הסתרת כפתורים מיותרים כדי שישאר PDF נקי)
+                submitBtn.classList.add('hide-in-pdf-export');
+                document.getElementById('add-action-btn').classList.add('hide-in-pdf-export');
+                document.getElementById('clear-sig-btn').classList.add('hide-in-pdf-export');
+                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.add('hide-in-pdf-export'));
+
+                // 3. הפקת PDF מקומי (מחזיר Base64)
+                const elementToPrint = document.getElementById('report-container');
+                const opt = {
+                    margin:       5,
+                    filename:     'report.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 }, // windowWidth שומר על המבנה של Tailwind
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                const pdfBase64DataUrl = await html2pdf().set(opt).from(elementToPrint).outputPdf('datauristring');
+                
+                // החזרת הכפתורים למסך
+                submitBtn.classList.remove('hide-in-pdf-export');
+                document.getElementById('add-action-btn').classList.remove('hide-in-pdf-export');
+                document.getElementById('clear-sig-btn').classList.remove('hide-in-pdf-export');
+                document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.remove('hide-in-pdf-export'));
+
+                // חילוץ המחרוזת הנקייה של ה-Base64 מתוך ה-Data URL והוספה לפיילוד
+                formData.pdf_base64 = pdfBase64DataUrl.split(',')[1];
+
+                // 4. שליחת הבקשה לוובהוק
+                const TARGET_WEBHOOK = 'https://hook.eu1.make.com/1ukn154fochpe0xprtqj2be2stujtjed';
+                const response = await fetch(TARGET_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    alert('הדו"ח והמסמך נשלחו בהצלחה!');
+                    // אופציונלי: איפוס טופס
+                    // document.getElementById('main-form').reset();
+                    // clearSignature();
+                } else {
+                    alert('שגיאה בשליחת הדו"ח. אנא נסה שוב.');
+                }
+
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('אירעה שגיאה בתהליך עיבוד הטופס.');
+            } finally {
+                // שחזור מצב כפתור
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                lucide.createIcons();
+            }
+        });
     </script>
 </body>
 </html>
