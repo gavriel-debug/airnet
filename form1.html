@@ -1,8 +1,3 @@
-הנה הקוד המלא והסופי. שילבתי פה את כל התיקונים: מנגנון ה-RTL שמונע את חיתוך הטקסט בצדדים, מניעת העמודים הריקים, והסתרת הכפתורים ב-PDF.
-
-פשוט העתק את כל הבלוק הזה, שמור, ונסה לשלוח שוב – ה-PDF אמור לצאת מדויק, נקי ומלא.
-
-```html
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -33,7 +28,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        /* עיצוב נוסף עבור אנימציות */
         .fade-in-up {
             animation: fadeInUp 0.4s ease-out forwards;
         }
@@ -41,7 +35,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* מחלקה להסתרת אלמנטים בזמן יצירת PDF */
         .hide-in-pdf-export {
             display: none !important;
         }
@@ -257,13 +250,11 @@
     </div>
 
     <script>
-        // אתחול אייקונים
         lucide.createIcons();
 
-        // === שליפת נתונים ראשונית מהוובהוק בעת פתיחת הטופס ===
+        // שליפת נתונים ראשונית
         (function sendOpenWebhook() {
             const OPEN_WEBHOOK_URL = 'https://hook.eu1.make.com/urdv6soafdq8im88v5pa87j0jp0gjhvx';
-
             const params = new URLSearchParams(window.location.search);
             const payload = {
                 recordid: params.get('recordid') || '',
@@ -308,7 +299,7 @@
             .catch(err => console.error('שגיאה בשליחת/קבלת הוובהוק:', err));
         })();
 
-        // === לוח חתימה (canvas) ===
+        // חתימה (canvas)
         (function setupSignaturePad() {
             const canvas = document.getElementById('signature-pad');
             if (!canvas) return;
@@ -367,7 +358,7 @@
             };
         })();
 
-        // === פעולות דינמיות ===
+        // הוספת שורות דינמיות
         function addDynamicAction() {
             const container = document.getElementById('dynamic-actions');
             const row = document.createElement('div');
@@ -384,20 +375,19 @@
             lucide.createIcons();
         }
 
-        // === שליחת הטופס והפקת PDF לוובהוק ===
+        // שליחת הטופס + הפקת PDF
         document.getElementById('main-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const submitBtn = document.getElementById('submit-btn');
             const originalText = submitBtn.innerHTML;
             
-            // חיווי טעינה
             submitBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> מעבד ומייצר מסמך...';
             submitBtn.disabled = true;
             lucide.createIcons();
 
             try {
-                // 1. איסוף כל השדות לפיילוד JSON
+                // 1. בניית ה-JSON
                 const formData = {
                     report_number: document.getElementById('report_number').value,
                     treatment_type: document.getElementById('treatment_type').value,
@@ -423,7 +413,6 @@
                     signature_base64: window.getSignatureDataUrl()
                 };
 
-                // איסוף מערך הפעולות הדינמיות
                 const actions = [];
                 document.querySelectorAll('.dynamic-row').forEach(row => {
                     const name = row.querySelector('.action-name').value;
@@ -434,57 +423,56 @@
                 });
                 formData.actions = actions;
 
-                // 2. הכנת ה-DOM לצילום (הסתרת כפתורים מיותרים כדי שישאר PDF נקי)
+                // 2. הכנה לצילום המסך - הסתרת כפתורים
                 submitBtn.classList.add('hide-in-pdf-export');
                 document.getElementById('add-action-btn').classList.add('hide-in-pdf-export');
                 document.getElementById('clear-sig-btn').classList.add('hide-in-pdf-export');
                 document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.add('hide-in-pdf-export'));
 
-                // 3. הפקת PDF מקומי (מחזיר Base64)
                 const elementToPrint = document.getElementById('report-container');
                 
-                // קריטי: גלילה לראש העמוד
+                // --- הפתרון הסופי לחיתוך השמאלי ---
+                // גלילה למעלה
                 window.scrollTo(0, 0);
 
-                // --- הטריק ל-RTL ---
-                // ביטול המרכוז והגדרת רוחב קבוע זמנית כדי למנוע את החיתוך בצדדים
-                elementToPrint.classList.remove('max-w-4xl', 'mx-auto');
-                elementToPrint.style.width = '800px'; 
-                elementToPrint.style.margin = '0';
+                // קיבוע רוחב זמני לפני הצילום
+                const originalWidth = elementToPrint.style.width;
+                const originalMaxWidth = elementToPrint.style.maxWidth;
+                elementToPrint.style.width = '800px';
+                elementToPrint.style.maxWidth = '800px';
 
                 const opt = {
-                    margin:       10, 
+                    margin:       [10, 10, 10, 10], 
                     filename:     'report.pdf',
                     image:        { type: 'jpeg', quality: 1 },
                     html2canvas:  { 
                         scale: 2, 
                         useCORS: true, 
-                        scrollY: 0
+                        scrollY: 0,
+                        scrollX: 0,
+                        windowWidth: 900 // מכריח חלון וירטואלי גדול יותר מרוחב האלמנט
                     },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak:    { mode: 'avoid-all' }
                 };
 
-                // השהייה קטנה לתת לדפדפן לרנדר הכל נקי לפני שמצלמים
+                // השהייה כדי לתת לדפדפן להעלים את הכפתורים ולקבע רוחב
                 await new Promise(resolve => setTimeout(resolve, 500));
 
                 const pdfBase64DataUrl = await html2pdf().set(opt).from(elementToPrint).outputPdf('datauristring');
                 
-                // --- החזרת העיצוב למצב רגיל במסך ---
-                elementToPrint.classList.add('max-w-4xl', 'mx-auto');
-                elementToPrint.style.width = '';
-                elementToPrint.style.margin = '';
+                // החזרת עיצוב המסך לקדמותו
+                elementToPrint.style.width = originalWidth;
+                elementToPrint.style.maxWidth = originalMaxWidth;
                 
-                // החזרת הכפתורים למסך
                 submitBtn.classList.remove('hide-in-pdf-export');
                 document.getElementById('add-action-btn').classList.remove('hide-in-pdf-export');
                 document.getElementById('clear-sig-btn').classList.remove('hide-in-pdf-export');
                 document.querySelectorAll('.delete-action-btn').forEach(btn => btn.classList.remove('hide-in-pdf-export'));
 
-                // חילוץ המחרוזת הנקייה של ה-Base64 מתוך ה-Data URL והוספה לפיילוד
+                // חילוץ המחרוזת ושליחה לוובהוק
                 formData.pdf_base64 = pdfBase64DataUrl.split(',')[1];
 
-                // 4. שליחת הבקשה לוובהוק
                 const TARGET_WEBHOOK = 'https://hook.eu1.make.com/1ukn154fochpe0xprtqj2be2stujtjed';
                 const response = await fetch(TARGET_WEBHOOK, {
                     method: 'POST',
@@ -502,7 +490,6 @@
                 console.error('Error submitting form:', error);
                 alert('אירעה שגיאה בתהליך עיבוד הטופס.');
             } finally {
-                // שחזור מצב כפתור
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
                 lucide.createIcons();
@@ -511,5 +498,3 @@
     </script>
 </body>
 </html>
-
-```
